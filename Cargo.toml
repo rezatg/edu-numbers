@@ -1,0 +1,8 @@
+[package]
+name = "edu-numbers"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+num2words = "1.2.0"
+rand = "0.9.1"
