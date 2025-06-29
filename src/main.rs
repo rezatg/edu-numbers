@@ -1,24 +1,50 @@
-use rand::seq::SliceRandom;
-use rand::rng;
+use rand::{rng, seq::{IndexedRandom}};
 use num2words::Num2Words;
 use std::io::{self, Write};
 
 fn main() {
     println!("📚 English Number Practice with Rust!");
-
     let (min, max) = get_range();
+    let numbers: Vec<u32> = (min..=max).collect();
+    practice_loop(numbers);
+}
 
-    let mut numbers: Vec<u32> = (min..=max).collect();
-    let mut rng = rng();
+fn get_range() -> (u32, u32) {
+    println!("Enter range for numbers to practice:");
 
+    let min = read_number("🔽 Minimum: ");
+    let max = loop {
+        let n = read_number("🔼 Maximum: ");
+        if n >= min {
+            break n;
+        }
+        println!("❗️ Please enter a number ≥ {min}");
+    };
+
+    (min, max)
+}
+
+fn read_number(prompt: &str) -> u32 {
     loop {
-        if numbers.is_empty() {
-            println!("\n🎉 You've practiced all numbers in the range!");
-            break;
+        print!("{}", prompt);
+        io::stdout().flush().unwrap();
+
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).unwrap();
+
+        if let Ok(n) = input.trim().parse::<u32>() {
+            return n;
         }
 
-        numbers.shuffle(&mut rng);
-        let number = numbers.pop().unwrap(); // safe unwrap because we checked is_empty
+        println!("❗️ Please enter a valid number.");
+    }
+}
+
+fn practice_loop(mut numbers: Vec<u32>) {
+    let mut rng = rng();
+
+    while let Some(number) = numbers.choose(&mut rng).cloned() {
+        numbers.retain(|&n| n != number); // remove the selected number
 
         println!("\n🔢 Number: {number}");
         print!("✍️  Write the number in English (or type 'exit'): ");
@@ -44,34 +70,6 @@ fn main() {
             println!("❌ Wrong. Correct: {}", correct_answer);
         }
     }
-}
 
-fn get_range() -> (u32, u32) {
-    println!("Enter range for numbers to practice:");
-
-    let min = loop {
-        print!("🔽 Minimum: ");
-        io::stdout().flush().unwrap();
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap();
-        if let Ok(n) = input.trim().parse::<u32>() {
-            break n;
-        }
-        println!("❗️ Please enter a valid number.");
-    };
-
-    let max = loop {
-        print!("🔼 Maximum: ");
-        io::stdout().flush().unwrap();
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap();
-        if let Ok(n) = input.trim().parse::<u32>() {
-            if n >= min {
-                break n;
-            }
-        }
-        println!("❗️ Please enter a valid number greater than or equal to {}", min);
-    };
-
-    (min, max)
+    println!("\n🎉 You've practiced all numbers in the range!");
 }
