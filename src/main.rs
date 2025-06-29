@@ -33,7 +33,10 @@ fn main() {
             break;
         }
 
-        let correct_answer = Num2Words::new(number).to_words().unwrap_or_default().to_lowercase();
+        let correct_answer = Num2Words::new(number)
+            .to_words()
+            .unwrap_or_default()
+            .to_lowercase();
 
         if user_input == correct_answer {
             println!("✅ Correct!");
