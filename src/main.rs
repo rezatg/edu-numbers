@@ -1,6 +1,9 @@
 use rand::{rng, seq::{IndexedRandom}};
 use num2words::Num2Words;
 use std::io::{self, Write};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::process;
 
 fn main() {
     println!("📚 English Number Practice with Rust!");
@@ -42,9 +45,24 @@ fn read_number(prompt: &str) -> u32 {
 
 fn practice_loop(mut numbers: Vec<u32>) {
     let mut rng = rng();
+    let correct = Arc::new(std::sync::Mutex::new(0));
+    let wrong = Arc::new(std::sync::Mutex::new(0));
 
-    while let Some(number) = numbers.choose(&mut rng).cloned() {
-        numbers.retain(|&n| n != number); // remove the selected number
+    let running = Arc::new(AtomicBool::new(true));
+    let r = running.clone();
+    let c_correct = Arc::clone(&correct);
+    let c_wrong = Arc::clone(&wrong);
+
+    ctrlc::set_handler(move || {
+        println!("\n🛑 Interrupted by user.");
+        print_summary(*c_correct.lock().unwrap(), *c_wrong.lock().unwrap());
+        r.store(false, Ordering::SeqCst);
+        process::exit(0);
+    }).expect("Error setting Ctrl-C handler");
+
+    while !numbers.is_empty() && running.load(Ordering::SeqCst) {
+        numbers.shuffle(&mut rng);
+        let number = *numbers.last().unwrap();
 
         println!("\n🔢 Number: {number}");
         print!("✍️  Write the number in English (or type 'exit'): ");
@@ -66,10 +84,14 @@ fn practice_loop(mut numbers: Vec<u32>) {
 
         if user_input == correct_answer {
             println!("✅ Correct!");
+            *correct.lock().unwrap() += 1;
+            numbers.pop(); // حذف عدد فقط در صورت پاسخ درست
         } else {
             println!("❌ Wrong. Correct: {}", correct_answer);
+            *wrong.lock().unwrap() += 1;
         }
     }
 
     println!("\n🎉 You've practiced all numbers in the range!");
+    print_summary(*correct.lock().unwrap(), *wrong.lock().unwrap());
 }
