@@ -1,4 +1,4 @@
-use rand::{rng, seq::{IndexedRandom}};
+use rand::{seq::SliceRandom, rng};
 use num2words::Num2Words;
 use std::io::{self, Write};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -94,4 +94,11 @@ fn practice_loop(mut numbers: Vec<u32>) {
 
     println!("\n🎉 You've practiced all numbers in the range!");
     print_summary(*correct.lock().unwrap(), *wrong.lock().unwrap());
+}
+
+
+fn print_summary(correct: u32, wrong: u32) {
+    println!("\n📊 Summary:");
+    println!("✅ Correct answers: {}", correct);
+    println!("❌ Wrong answers:   {}", wrong);
 }

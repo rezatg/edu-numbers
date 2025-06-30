@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 num2words = "1.2.0"
 rand = "0.9.1"
+ctrlc = "*"
