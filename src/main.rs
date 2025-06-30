@@ -75,7 +75,12 @@ fn practice_loop(mut numbers: Vec<u32>) {
         io::stdout().flush().unwrap();
 
         let mut user_input = String::new();
-        io::stdin().read_line(&mut user_input).unwrap();
+        let result = io::stdin().read_line(&mut user_input);
+        if result.is_err() {
+            println!("❗ Error reading input. Try again.");
+            continue;
+        }
+
         let user_input = user_input.trim().to_lowercase();
 
         if user_input == "exit" {
