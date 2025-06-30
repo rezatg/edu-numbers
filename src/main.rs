@@ -4,6 +4,7 @@ use std::io::{self, Write};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::process;
+use ctrlc::set_handler;
 
 fn main() {
     println!("📚 English Number Practice with Rust!");
@@ -45,17 +46,20 @@ fn read_number(prompt: &str) -> u32 {
 
 fn practice_loop(mut numbers: Vec<u32>) {
     let mut rng = rng();
+    let total = numbers.len();
     let correct = Arc::new(std::sync::Mutex::new(0));
     let wrong = Arc::new(std::sync::Mutex::new(0));
+    let answered = Arc::new(std::sync::Mutex::new(0));
 
     let running = Arc::new(AtomicBool::new(true));
     let r = running.clone();
     let c_correct = Arc::clone(&correct);
     let c_wrong = Arc::clone(&wrong);
+    let c_answered = Arc::clone(&answered);
 
-    ctrlc::set_handler(move || {
+    set_handler(move || {
         println!("\n🛑 Interrupted by user.");
-        print_summary(*c_correct.lock().unwrap(), *c_wrong.lock().unwrap());
+        print_summary(*c_correct.lock().unwrap(), *c_wrong.lock().unwrap(), total, *c_answered.lock().unwrap());
         r.store(false, Ordering::SeqCst);
         process::exit(0);
     }).expect("Error setting Ctrl-C handler");
@@ -64,7 +68,9 @@ fn practice_loop(mut numbers: Vec<u32>) {
         numbers.shuffle(&mut rng);
         let number = *numbers.last().unwrap();
 
-        println!("\n🔢 Number: {number}");
+        let progress = *answered.lock().unwrap();
+        println!("\n🔢 Number: {number}    ({}/{})", progress + 1, total);
+
         print!("✍️  Write the number in English (or type 'exit'): ");
         io::stdout().flush().unwrap();
 
@@ -82,10 +88,12 @@ fn practice_loop(mut numbers: Vec<u32>) {
             .unwrap_or_default()
             .to_lowercase();
 
+        *answered.lock().unwrap() += 1;
+
         if user_input == correct_answer {
             println!("✅ Correct!");
             *correct.lock().unwrap() += 1;
-            numbers.pop(); // حذف عدد فقط در صورت پاسخ درست
+            numbers.pop(); // فقط در صورت جواب صحیح حذف کن
         } else {
             println!("❌ Wrong. Correct: {}", correct_answer);
             *wrong.lock().unwrap() += 1;
@@ -93,12 +101,14 @@ fn practice_loop(mut numbers: Vec<u32>) {
     }
 
     println!("\n🎉 You've practiced all numbers in the range!");
-    print_summary(*correct.lock().unwrap(), *wrong.lock().unwrap());
+    print_summary(*correct.lock().unwrap(), *wrong.lock().unwrap(), total, *answered.lock().unwrap());
 }
 
 
-fn print_summary(correct: u32, wrong: u32) {
+
+fn print_summary(correct: u32, wrong: u32, total: usize, answered: u32) {
     println!("\n📊 Summary:");
+    println!("🧠 Total answered:  {}/{}", answered, total);
     println!("✅ Correct answers: {}", correct);
     println!("❌ Wrong answers:   {}", wrong);
 }
